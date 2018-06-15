@@ -196,7 +196,7 @@ class Wup extends CI_Controller {
 			$products = [];
 			$woowup = new \WoowUp\Client($this->apikey);
 			foreach ($file_arr as $key => $value) {
-				$file_row = str_getcsv($value,$this->deliminter);
+				$file_row = str_getcsv($value,$this->delimiter);
 
 				$sku = $file_row[0];
 				$item = ['sku' => $file_row[0],
@@ -273,6 +273,7 @@ class Wup extends CI_Controller {
 								 'street' => utf8_decode($file_row[7]),
 								 'country'=> utf8_decode($file_row[8]),
 								 'postcode' => utf8_decode($file_row[9]),
+								 'document' => $file_row[0],
 								];
 
 						if($woowup->users->exist($file_row[0])){
@@ -330,12 +331,12 @@ class Wup extends CI_Controller {
 
 		$this->load->library('ftp');
 		$this->ftp->connect($config);
-		$files = array_filter(array_map(array($this, '_findFile'),$this->ftp->list_files($this->remote_folder)));
-
+		$files = array_filter($this->ftp->list_files($this->remote_folder), array($this, '_findFile'));
 		if(!empty($files)){
 			$download = true;
 
 			foreach($files as $file){
+				echo "Descargando el archivo $file \n";
 				try {
 					$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file.'.'.$this->ext, 'ascii');
 
@@ -343,7 +344,7 @@ class Wup extends CI_Controller {
 						throw new Exception("No se pudo descargar el archivo / Archivo no existe.",1);
 					};
 
-					$delete = $this->ftp->delete_file($file);
+					//$delete = $this->ftp->delete_file($file);
 
 				} catch(Exception $error) {
 					echo $error->getMessage();
