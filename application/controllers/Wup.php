@@ -84,12 +84,12 @@ class Wup extends CI_Controller {
 				}
 				$sale_date = array_shift($file_row);
 				$sale_date = date_format(date_create_from_format("d/m/Y", $sale_date), "Y-m-d 12:00:00");
+
 				if ($hist === false) {
 					if ($expected_date !== $sale_date) {
 						continue;
 					}
-				}
-						
+				}		
 
 				if(!empty($file_row[1])){
 					if(  !$invoice_number == false
@@ -170,11 +170,15 @@ class Wup extends CI_Controller {
 	{
 
 		$order = [
-		"service_uid" => utf8_encode($orders[0][0]),
-		"invoice_number" => $orders[0][1],
+		"service_uid" => utf8_encode($orders[0][1]),
+		"invoice_number" => $orders[0][2],
 		"purchase_detail" => [],
 		"prices" => [],
 		];
+
+		if (($branch_name = $this->getBranch($orders[0][0])) !== null) {
+			$order['branch_name'] = $branch_name;
+		}
 
 		$cost = 0;
 		$shipping = 0;
@@ -185,7 +189,7 @@ class Wup extends CI_Controller {
 
 		foreach ($orders as $o) {
 
-
+			array_shift($o);
 
 			$d = ((int)$o[4] * (float)$o[5])*((float) $o[6]/100);
 
@@ -212,6 +216,34 @@ class Wup extends CI_Controller {
 
 		return $order;
 
+	}
+
+	public function getBranch($branch_id)
+	{
+		$branches = [
+			'602' => "602 - ARRIBEÑOS",
+			'604' => "604 - SOLAR DE LA ABADIA",
+			'608' => "608 - DOT BAIRES",
+			'609' => "609 - ALTO PALERMO",
+			'610' => "610 - CASONA CORDOBA",
+			'611' => "611 - LA PLATA (FERUMA)",
+			'613' => "613 - RECOLETA MALL",
+			'614' => "614 - GALERIAS PACIFICO",
+			'615' => "615 - PATIO BULLRICH",
+			'700' => "999 - OUTLETS",
+			'701' => "701 - AGUIRRE",
+			'704' => "704 - SOLEIL FACTORY",
+			'705' => "705 - DISTRITO ARCOS",
+			'801' => "801 - LUXURY OUTLET",
+			'802' => "802 - CARPA LM",
+			'803' => "803 - CARPA AAP",
+			];
+
+		if (isset($branches[$branch_id])) {
+			return $branches[$branch_id];
+		} else {
+			return null;
+		}
 	}
 
 	public function products($hist = false)
