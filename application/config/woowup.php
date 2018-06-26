@@ -13,8 +13,8 @@ $config["woowup"] = [
 			 "production"=> "c1fd7f3a5f5dda8e8617850d8cefca72be1ee0cd0f606907586cd7623f649aa6"
 			],
 "folders" => ["sandbox" => ['pending' => "/home/vagrant/htdocs/lamartina/dowloads/pending", "processed"=>"/home/vagrant/htdocs/lamartina/dowloads/processed"],
-			  "production" => ['pending' => "D:/files/orsonia/pending", "processed"=>"D:/files/orsonia/processed"]
+			  "production" => ['pending' => "/home/lamartina/pending", "processed"=>"/home/lamartina/processed"]
 		     ],
-"entities" => ["customers" => "users", "products" => "products", "orders"=> "orders_"],
+"entities" => ["customers" => "users_", "products" => "products", "orders"=> "orders_"],
 "file" => ["format"=> "csv", "extension" => "txt", "delimiter"=> ";"]
 ];
