@@ -290,7 +290,7 @@ class Wup extends CI_Controller {
 		if($hist === "hist"){
 			$this->file = $this->file."_hist";
 		} else {
-			$this->file = $this->sales_file.date('Ymd');
+			$this->file = $this->customers_file.date('Ymd');
 		}
 
 		if($this->_downloadFTP()){
