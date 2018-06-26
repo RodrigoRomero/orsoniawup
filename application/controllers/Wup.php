@@ -50,7 +50,7 @@ class Wup extends CI_Controller {
 		die('fin');
 	}
 
-	public function sales()
+	public function sales($days = 0, $hist = false)
 	{
 
 		$this->load->helper('directory');
@@ -58,7 +58,13 @@ class Wup extends CI_Controller {
 		$this->load->helper('date');
 		$this->load->helper('html');
 
-		$this->file = $this->sales_file.date('Ymd');
+		if ($hist == false) {
+			$this->file = $this->sales_file.date('Ymd', strtotime("-$days days"));
+			$days++;
+			$expected_date = date('Y-m-d 12:00:00', strtotime("-$days days"));
+		} else {
+			$this->file = $this->sales_file . "20180621111859_hist_2015-16-17-18";
+		}
 
 		if($this->_downloadFTP()){
 
@@ -72,6 +78,18 @@ class Wup extends CI_Controller {
 			$i;
 			foreach ($file_arr as $key => $value) {
 				$file_row = str_getcsv($value);
+				if (count($file_row) <= 1) {
+					continue;
+				}
+				//$sale_date = array_shift($file_row);
+				//$sale_date = date_format(date_create_from_format("d/m/Y", $sale_date), "Y-m-d 12:00:00");
+				$sale_date = date('Y-m-d 12:00:00', strtotime("-$days days"));
+				if ($hist === false) {
+					if ($expected_date !== $sale_date) {
+						continue;
+					}
+				}
+						
 
 				if(!empty($file_row[1])){
 					if(  !$invoice_number == false
@@ -80,12 +98,7 @@ class Wup extends CI_Controller {
 					   ) {
 						$order = $this->buildOrder($orders);
 						$orders = [];
-
-
 					} elseif($total_rows == $key) {
-
-
-
 						$order = $this->buildOrder($orders);
 						$orders = [];
 					}
@@ -94,28 +107,57 @@ class Wup extends CI_Controller {
 
 						$woowup = new \WoowUp\Client($this->apikey);
 
-						if($woowup->users->exist($order['service_uid'])){
-							if($this->debug){
-								echo '<pre>';
-								print_r($order['invoice_number']);
-								echo '</pre>';
-							}
+						try {
+							if($woowup->users->exist($order['service_uid'])){
+								if($this->debug){
+									echo '<pre>';
+									print_r($order['invoice_number']);
+									echo '</pre>';
+								}
 
-							$woowup->purchases->create($order);
-						} else {
-							if($this->debug){
-								echo '<pre>';
-								echo "Customer no existe : ".$order['service_uid'];
-								echo '</pre>';
+								$order['createtime'] = $sale_date;
+								$woowup->purchases->create($order);
+							} else {
+								if($this->debug){
+									echo '<pre>';
+									echo "Customer no existe : ".$order['service_uid'];
+									echo '</pre>';
+								}
 							}
+						} catch (\Exception $e) {
+							var_dump($e->getMessage());
 						}
-
 					}
 					$order = '';
 					$invoice_number = isset($file_row[1]) ? $file_row[1] : false;
 					$orders[] = $file_row;
 				}
 
+			}
+			if (isset($orders) && isset($sale_date)) {
+				$order = $this->buildOrder($orders);
+				$order['createtime'] = $sale_date;
+				$woowup = new \WoowUp\Client($this->apikey);
+				try {
+					if($woowup->users->exist($order['service_uid'])){
+						if($this->debug){
+							echo '<pre>';
+							print_r($order['invoice_number']);
+							echo '</pre>';
+						}
+
+						$order['createtime'] = $sale_date;
+						$woowup->purchases->create($order);
+					} else {
+						if($this->debug){
+							echo '<pre>';
+							echo "Customer no existe : ".$order['service_uid'];
+							echo '</pre>';
+						}
+					}
+				} catch (\Exception $e) {
+					var_dump($e->getMessage());
+				}
 			}
 			rename($this->pending_folder.'/'.$this->file.'.'.$this->ext, $this->processed_folder.'/'.$this->file.'.'.$this->ext);
 		}
@@ -249,7 +291,7 @@ class Wup extends CI_Controller {
 			$this->file = $this->file."_hist";
 		}
 
-		if($this->_downloadFTP()){
+		if(true){//$this->_downloadFTP()){
 			$i = 1;
 			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$this->file.'.'.$this->ext));
 			array_pop($file_arr);
@@ -315,7 +357,7 @@ class Wup extends CI_Controller {
 
 	private function _findFile($item){
 		$item_array = explode("/", $item);
-		if(preg_match('/^'.$this->file.'/', $item_array[3])){
+		if(preg_match('/^'.$this->file.'([0-9]{6}).txt/i', $item_array[3])){
 			return $item;
 		};
 	}
@@ -334,7 +376,7 @@ class Wup extends CI_Controller {
 		$files = array_filter($this->ftp->list_files($this->remote_folder), array($this, '_findFile'));
 		if(!empty($files)){
 			$download = true;
-
+			
 			foreach($files as $file){
 				echo "Descargando el archivo $file \n";
 				try {
