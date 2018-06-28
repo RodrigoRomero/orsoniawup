@@ -307,7 +307,7 @@ class Wup extends CI_Controller {
 
 	}
 
-	public function customers($hist = "")
+	public function customers($days = 0, $hist = "")
 	{
 		ini_set('max_execution_time', 0);
 		set_time_limit(0);
@@ -322,9 +322,9 @@ class Wup extends CI_Controller {
 		if($hist === "hist"){
 			$this->file = $this->file."_hist";
 		} else {
-			$this->file = $this->customers_file.date('Ymd');
+			$this->file = $this->customers_file.date('Ymd', strtotime("-$days days"));
 		}
-
+		
 		if($this->_downloadFTP()){
 			$i = 1;
 			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$this->file.'.'.$this->ext));
