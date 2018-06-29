@@ -320,7 +320,8 @@ class Wup extends CI_Controller {
 		$this->file = $this->customers_file;
 
 		if($hist === "hist"){
-			$this->file = $this->file."_hist";
+			$this->file = $this->file."hist";
+			$this->hist = true;
 		} else {
 			$this->file = $this->customers_file.date('Ymd', strtotime("-$days days"));
 		}
@@ -353,6 +354,9 @@ class Wup extends CI_Controller {
 								];
 
 						if($woowup->users->exist($file_row[0])){
+							if (explode("@", $item['email'])[1] == "noemail.com") {
+								unset($item['email']);
+							}
 							$woowup->users->update($file_row[0], $item);
 							if($this->debug){
 								echo '<pre>';
