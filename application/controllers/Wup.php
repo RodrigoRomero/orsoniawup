@@ -68,7 +68,7 @@ class Wup extends CI_Controller {
 			$this->hist = true;
 		}
 
-		if($this->_downloadFTP()){
+		if(true){//$this->_downloadFTP()){
 
 			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$this->file.'.'.$this->ext));
 
@@ -125,7 +125,23 @@ class Wup extends CI_Controller {
 								}
 							}
 						} catch (\Exception $e) {
-							var_dump($e->getMessage());
+							if (method_exists($e, "getResponse")) {
+								$response = json_decode($e->getResponse()->getBody(), true);
+		                		switch ($response['code']) {
+		                    		case 'duplicated_purchase_number':
+		                    			$woowup->purchases->update($order);
+		                    			echo '<pre>';
+		                    			print_r($order['invoice_number']);
+		                    			echo ' actualizada';
+		                    			echo '</pre>';
+		                    			break;
+		                    		default:
+		                    			echo $response['code'];
+		                    			break;
+		                    	}
+							} else {
+								var_dump($e->getMessage());
+							}
 						}
 					}
 					$order = '';
@@ -160,7 +176,7 @@ class Wup extends CI_Controller {
 						$response = json_decode($e->getResponse()->getBody(), true);
                 		switch ($response['code']) {
                     		case 'duplicated_purchase_number':
-                    			$this->woowup->purchases->update($order);
+                    			$woowup->purchases->update($order);
                     			echo '<pre>';
                     			print_r($order['invoice_number']);
                     			echo ' actualizada';
