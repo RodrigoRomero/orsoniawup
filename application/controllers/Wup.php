@@ -64,7 +64,7 @@ class Wup extends CI_Controller {
 			$days++;
 			$expected_date = date('Y-m-d 12:00:00', strtotime("-$days days"));
 		} else {
-			$this->file = $this->sales_file . "20180621111859_hist_2015-16-17-18";
+			$this->file = "ordershist_20180704125214";
 			$this->hist = true;
 		}
 
