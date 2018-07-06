@@ -68,7 +68,7 @@ class Wup extends CI_Controller {
 			$this->hist = true;
 		}
 
-		if(true){//$this->_downloadFTP()){
+		if($this->_downloadFTP()){
 
 			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$this->file.'.'.$this->ext));
 
