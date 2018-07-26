@@ -291,8 +291,8 @@ class Wup extends CI_Controller {
 
 		if($hist == true){
 			$this->file = $this->file."_hist";
+			$this->hist = true;
 		}
-
 
 		if($this->_downloadFTP()){
 			$i = 1;
@@ -301,18 +301,49 @@ class Wup extends CI_Controller {
 
 			$products = [];
 			$woowup = new \WoowUp\Client($this->apikey);
+
 			foreach ($file_arr as $key => $value) {
 				$file_row = str_getcsv($value,$this->delimiter);
+
+				if (($file_row[4] == "") || ($file_row[2] == "")) {
+					continue;
+				}
 
 				$sku = $file_row[0];
 				$item = ['sku' => $file_row[0],
 						 'brand' => $file_row[1],
 						 'description' => utf8_encode($file_row[2]),
-						 'name' => utf8_encode($file_row[3]),
-						 'stock'=> (int)$file_row[4],
-						 'price'=> (int)$file_row[5]
+						 'name' => utf8_encode($file_row[4])
 						];
 
+				// Categorias
+				$category = [];
+				$parts = explode(" ", $file_row[2]);
+				$parentCat = array_shift($parts);
+				if (array_search($parentCat, array("LOCAL", "EMBALAJE", "GESTION", "INSUMO")) !== false) {
+					continue;
+				}
+				$category[] = [
+					'id' => $parentCat,
+					'name' => $parentCat
+				];
+				if (count($parts) > 0) {
+					$subCat = array_shift($parts);
+					$category[] = [
+						'id' => $parentCat . "-" . $subCat,
+						'name' => $subCat
+					];
+					if (count($parts) > 0) {	
+						$subsubCat = implode(" ", $parts);
+						$category[] = [
+							'id' => $parentCat . "-" . $subCat . "-" . $subsubCat,
+							'value' => $subsubCat
+						];
+					}
+				}
+
+				$item['category'] = $category;
+				
 				if($woowup->products->exist($file_row[0])){
 					$woowup->products->update($sku, $item);
 					if($this->debug){
