@@ -337,7 +337,7 @@ class Wup extends CI_Controller {
 						$subsubCat = implode(" ", $parts);
 						$category[] = [
 							'id' => $parentCat . "-" . $subCat . "-" . $subsubCat,
-							'value' => $subsubCat
+							'name' => $subsubCat
 						];
 					}
 				}
