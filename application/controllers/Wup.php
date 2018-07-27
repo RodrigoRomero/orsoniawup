@@ -318,7 +318,7 @@ class Wup extends CI_Controller {
 
 				// Categorias
 				$category = [];
-				$parts = explode(" ", $file_row[2]);
+				$parts = explode(" ", utf8_encode($file_row[2]));
 				$parentCat = array_shift($parts);
 				if (array_search($parentCat, array("LOCAL", "EMBALAJE", "GESTION", "INSUMO")) !== false) {
 					continue;
@@ -343,7 +343,7 @@ class Wup extends CI_Controller {
 				}
 
 				$item['category'] = $category;
-				
+				/*
 				if($woowup->products->exist($file_row[0])){
 					$woowup->products->update($sku, $item);
 					if($this->debug){
@@ -359,6 +359,25 @@ class Wup extends CI_Controller {
 						print_r($i.') create');
 						echo '</pre>';
 					}
+				}*/
+
+				if ($i >= 22952) {
+					if($woowup->products->exist($file_row[0])){
+					$woowup->products->update($sku, $item);
+					if($this->debug){
+						echo '<pre>';
+						print_r($i.') update');
+						echo '</pre>';
+					}
+				} else {
+
+					$woowup->products->create($item);
+					if($this->debug){
+						echo '<pre>';
+						print_r($i.') create');
+						echo '</pre>';
+					}
+				}
 				}
 
 				$i++;
