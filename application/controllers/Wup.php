@@ -262,6 +262,7 @@ class Wup extends CI_Controller {
 			'613' => "613 - RECOLETA MALL",
 			'614' => "614 - GALERIAS PACIFICO",
 			'615' => "615 - PATIO BULLRICH",
+			'650' => "650 - QUINTANA",
 			'700' => "999 - OUTLETS",
 			'701' => "701 - AGUIRRE",
 			'704' => "704 - SOLEIL FACTORY",
@@ -274,7 +275,7 @@ class Wup extends CI_Controller {
 		if (isset($branches[$branch_id])) {
 			return $branches[$branch_id];
 		} else {
-			return null;
+			return "$branch_id - DESCONOCIDA";
 		}
 	}
 
