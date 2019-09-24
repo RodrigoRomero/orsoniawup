@@ -216,9 +216,12 @@ class Wup extends CI_Controller {
 					}
 				}
 			}
-
-			foreach ($this->file as $f) {
-				rename($this->pending_folder.'/'.$f.'.'.$this->ext, $this->processed_folder.'/'.$f.'.'.$this->ext);
+			if (is_array($this->file)) {
+				foreach ($this->file as $f) {
+					rename($this->pending_folder.'/'.$f.'.'.$this->ext, $this->processed_folder.'/'.$f.'.'.$this->ext);
+				}
+			} else {
+				rename($this->pending_folder.'/'.$this->file.'.'.$this->ext, $this->processed_folder.'/'.$this->file.'.'.$this->ext);
 			}
 		}
 		die('FIN');
@@ -552,14 +555,18 @@ class Wup extends CI_Controller {
 			$download = true;
 			$counter = 0;
 			foreach($files as $file){
+
 				echo "Descargando el archivo $file \n";
 				try {
-					$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file[$counter].'.'.$this->ext, 'ascii');
+					if (is_array($this->file)) {
+						$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file[$counter].'.'.$this->ext, 'ascii');
+					} else {
+						$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file.'.'.$this->ext, 'ascii');
+					}
 
 					if($download !== true){
 						throw new Exception("No se pudo descargar el archivo / Archivo no existe.",1);
 					};
-
 					//$delete = $this->ftp->delete_file($file);
 
 				} catch(Exception $error) {
