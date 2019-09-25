@@ -39,6 +39,7 @@ class Wup extends CI_Controller {
 		$this->customers_file = $config['entities']["customers"];
 		$this->products_file = $config['entities']["products"];
 		$this->sales_file = $config['entities']["orders"];
+		$this->payments_file = $config['entities']["payments"];
 
 		if(!$this->input->is_cli_request()){
 			die('No direct script access allowed');
@@ -51,6 +52,24 @@ class Wup extends CI_Controller {
 		die('fin');
 	}
 
+	protected function loadPayments($payments) {
+		$this->payments = [];
+		$payments = $this->pending_folder.'/'.$payments.'.'.$this->ext;
+
+		$fh = fopen($payments, 'r');
+		while (($row = fgetcsv($fh, 1000, ',')) !== false) {
+			$arr = [
+                'invoice_number'    => $row[0],
+                'bank'             => $row[1],
+                'payment_type'      => strtolower($row[2]),
+                'total'             => (float)$row[3],
+                'brand'              => $row[4],
+            ];
+            if (!isset($this->payments[$row[0]])) $this->payments[$row[0]] = [];
+			$this->payments[$row[0]][] = $arr;
+		}
+	}
+
 	public function sales($days = 0, $hist = false)
 	{
 
@@ -60,18 +79,24 @@ class Wup extends CI_Controller {
 		$this->load->helper('html');
 
 		if ($hist == false) {
-			$this->file = $this->sales_file.date('Ymd', strtotime("-$days days"));
+			$this->file = [
+				$this->sales_file.date('Ymd', strtotime("-$days days")),
+				$this->payments_file.date('Ymd', strtotime("-$days days")),
+			];
 			$days++;
 			$expected_date = date('Y-m-d 12:00:00', strtotime("-$days days"));
 		} else {
 			$this->file = "ordershist_20180704125214";
+			$this->payments = false;
 			$this->hist = true;
 		}
 
 		if($this->_downloadFTP()){
 
-			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$this->file.'.'.$this->ext));
-
+			$ordersFile = $this->file[0];
+			$payments = $this->file[1];
+			$this->loadPayments($payments);
+			$file_arr = explode(PHP_EOL,read_file($this->pending_folder.'/'.$ordersFile.'.'.$this->ext));
 			$total_rows = count($file_arr)-1;
 			$row_index = 0;
 			$invoice_number = false;
@@ -191,7 +216,13 @@ class Wup extends CI_Controller {
 					}
 				}
 			}
-			rename($this->pending_folder.'/'.$this->file.'.'.$this->ext, $this->processed_folder.'/'.$this->file.'.'.$this->ext);
+			if (is_array($this->file)) {
+				foreach ($this->file as $f) {
+					rename($this->pending_folder.'/'.$f.'.'.$this->ext, $this->processed_folder.'/'.$f.'.'.$this->ext);
+				}
+			} else {
+				rename($this->pending_folder.'/'.$this->file.'.'.$this->ext, $this->processed_folder.'/'.$this->file.'.'.$this->ext);
+			}
 		}
 		die('FIN');
 
@@ -246,6 +277,19 @@ class Wup extends CI_Controller {
 			"total" =>  $total
 		];
 
+		if (isset($this->payments[$order['invoice_number']])) {
+			$order['payment'] = [];
+			$payments = $this->payments[$order['invoice_number']];
+			foreach ($payments as $payment) {
+				$paymentArray = [
+					'type'	=> strtolower($payment['payment_type']),
+					'brand'	=> ucfirst(strtolower($payment['brand'])),
+					'bank'	=> ucfirst(strtolower($payment['bank'])),
+					'total'	=> (float) $payment['total'],
+				];
+				$order['payment'][] = $paymentArray;
+			}
+		}
 		return $order;
 
 	}
@@ -403,7 +447,7 @@ class Wup extends CI_Controller {
 		$this->file = $this->customers_file;
 
 		if($hist === "hist"){
-			$this->file = $this->file."hist";
+			$this->file = $this->file[0]."hist";
 			$this->hist = true;
 		} else {
 			$this->file = $this->customers_file.date('Ymd', strtotime("-$days days"));
@@ -478,7 +522,15 @@ class Wup extends CI_Controller {
 
 	private function _findFile($item){
 		$item_array = explode("/", $item);
-		if(preg_match('/^'.$this->file.'([0-9]{6}).txt/i', $item_array[3])){
+		if (is_array($this->file)) {
+			$items = [];
+			foreach ($this->file as $file) {
+				if (preg_match('/^'.$file.'([0-9]{6}).txt/i', $item_array[3])) {
+					$items[] = $item;
+				}
+			}
+			return $items;
+		} elseif(preg_match('/^'.$this->file.'([0-9]{6}).txt/i', $item_array[3])){
 			return $item;
 		};
 	}
@@ -494,28 +546,33 @@ class Wup extends CI_Controller {
 
 		$this->load->library('ftp');
 		$this->ftp->connect($config);
-		if ($this->hist === false) {		
+		if ($this->hist === false) {
 			$files = array_filter($this->ftp->list_files($this->remote_folder), array($this, '_findFile'));
 		} else {
 			$files[0] = $this->remote_folder . $this->file . '.' . $this->ext;
 		}
 		if(!empty($files)){
 			$download = true;
-			
+			$counter = 0;
 			foreach($files as $file){
+
 				echo "Descargando el archivo $file \n";
 				try {
-					$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file.'.'.$this->ext, 'ascii');
+					if (is_array($this->file)) {
+						$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file[$counter].'.'.$this->ext, 'ascii');
+					} else {
+						$download = $this->ftp->download($file, $this->pending_folder.'/'.$this->file.'.'.$this->ext, 'ascii');
+					}
 
 					if($download !== true){
 						throw new Exception("No se pudo descargar el archivo / Archivo no existe.",1);
 					};
-
 					//$delete = $this->ftp->delete_file($file);
 
 				} catch(Exception $error) {
 					echo $error->getMessage();
 				}
+				$counter ++;
 			}
 		} else {
 			$download = false;

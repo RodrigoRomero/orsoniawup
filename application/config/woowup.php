@@ -15,6 +15,6 @@ $config["woowup"] = [
 "folders" => ["sandbox" => ['pending' => "/home/vagrant/htdocs/lamartina/dowloads/pending", "processed"=>"/home/vagrant/htdocs/lamartina/dowloads/processed"],
 			  "production" => ['pending' => "/home/lamartina/pending", "processed"=>"/home/lamartina/processed"]
 		     ],
-"entities" => ["customers" => "users_", "products" => "products", "orders"=> "orders_"],
+"entities" => ["customers" => "users_", "products" => "products", "orders"=> "orders_", "payments" => "payments_"],
 "file" => ["format"=> "csv", "extension" => "txt", "delimiter"=> ";"]
 ];
